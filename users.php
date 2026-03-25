@@ -16,11 +16,15 @@ if ($method === 'GET') {
 if ($method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+    
+    // Hash the password before inserting
+    $hashedPassword = password_hash(trim($data['password']), PASSWORD_DEFAULT);
+    
     try {
         $stmt->execute([
             trim($data['name']),
             trim($data['email']),
-            trim($data['password']), // Still using plain-text based on our setup!
+            $hashedPassword, 
             $data['role']
         ]);
         echo json_encode(["success" => true]);
@@ -42,10 +46,11 @@ if ($method === 'PATCH') {
         exit;
     }
 
-    // If password is provided, update it. Otherwise, leave it alone.
+    // If password is provided, hash it and update. Otherwise, leave it alone.
     if (!empty($data['password'])) {
+        $hashedPassword = password_hash(trim($data['password']), PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, password = ?, role = ? WHERE id = ?");
-        $stmt->execute([trim($data['name']), trim($data['email']), trim($data['password']), $data['role'], $id]);
+        $stmt->execute([trim($data['name']), trim($data['email']), $hashedPassword, $data['role'], $id]);
     } else {
         $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?");
         $stmt->execute([trim($data['name']), trim($data['email']), $data['role'], $id]);
