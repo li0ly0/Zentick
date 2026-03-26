@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - ZenTick</title>
+    <title>Login - NextNQueue</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -13,25 +12,32 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-black text-white" x-data="loginApp()" x-cloak>
-    <div class="min-h-screen bg-black flex items-center justify-center p-6 relative">
-        <div class="max-w-md w-full bg-zinc-950 p-10 rounded-[40px] border border-zinc-900 shadow-2xl shadow-black/50 flex flex-col items-center">
-            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-white/10">
-                <i data-lucide="ticket" class="w-8 h-8 text-black"></i>
-            </div>
-            <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">NextNQueue</h1>
-            <p class="text-zinc-500 mb-8 text-center text-sm">Enter your credentials to access the support portal</p>
+<body class="bg-black text-white selection:bg-zinc-800 selection:text-white" x-data="loginApp()" x-cloak>
+    
+    <div class="fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(39,39,42,0.4),rgba(0,0,0,1))] pointer-events-none"></div>
+
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+        <div class="max-w-md w-full bg-zinc-950/80 backdrop-blur-xl px-10 py-14 rounded-[2rem] border border-white/[0.08] shadow-[0_0_50px_-12px_rgba(0,0,0,1)] flex flex-col">
             
-            <div class="w-full space-y-4">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-zinc-600 uppercase tracking-wider">Email Address</label>
-                    <input type="email" x-model="email" class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm outline-none focus:bg-black focus:border-white transition-all text-white" placeholder="name@company.com">
+            <div class="text-center mb-12 mt-6">
+                <h1 class="text-3xl font-bold text-white mb-3 tracking-tight">NextNQueue</h1>
+                <p class="text-zinc-400 text-sm">Enter your credentials to access the support portal</p>
+            </div>
+            
+            <div class="w-full space-y-7">
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-zinc-300">Email Address</label>
+                    <input type="email" x-model="email" class="w-full px-4 py-3.5 bg-black/50 border border-white/10 rounded-xl text-sm outline-none placeholder:text-zinc-600 focus:bg-black focus:border-zinc-500 focus:ring-4 focus:ring-zinc-500/10 transition-all text-white" placeholder="name@company.com">
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-zinc-600 uppercase tracking-wider">Password</label>
-                    <input type="password" x-model="password" class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm outline-none focus:bg-black focus:border-white transition-all text-white" placeholder="••••••••">
+                
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-zinc-300">Password</label>
+                    <input type="password" x-model="password" class="w-full px-4 py-3.5 bg-black/50 border border-white/10 rounded-xl text-sm outline-none placeholder:text-zinc-600 focus:bg-black focus:border-zinc-500 focus:ring-4 focus:ring-zinc-500/10 transition-all text-white" placeholder="••••••••">
                 </div>
-                <button @click="handleLogin()" class="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 shadow-lg shadow-white/20 transition-all active:scale-95 mt-4">
+
+                <div x-show="errorMessage" x-transition class="text-red-400 text-sm font-medium text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20" x-text="errorMessage" style="display: none;"></div>
+                
+                <button @click="handleLogin()" class="w-full py-3.5 mt-6 bg-white text-black font-semibold rounded-xl hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all active:scale-[0.98]">
                     Sign In
                 </button>
             </div>
@@ -41,39 +47,30 @@
     <script>
     function loginApp() {
         return {
-            email: 'admin@zentick.com',
-            password: 'password', // Test password
+            email: '',
+            password: '',
+            errorMessage: '',
             async handleLogin() {
+                this.errorMessage = ''; 
                 try {
                     const response = await fetch('auth.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            email: this.email, 
-                            password: this.password 
-                        })
+                        body: JSON.stringify({ email: this.email, password: this.password })
                     });
 
+                    const data = await response.json();
+
                     if (response.ok) {
-                        const data = await response.json();
                         localStorage.setItem('zentick_user', JSON.stringify(data.user));
-                        
-                        if (data.user.role === 'admin') {
-                            window.location.href = 'index.html'; 
-                        } else {
-                            window.location.href = 'user.html'; 
-                        }
+                        window.location.href = data.user.role === 'admin' ? 'index.html' : 'user.html'; 
                     } else {
-                        const errorData = await response.json();
-                        alert(errorData.error || 'Login failed');
+                        this.errorMessage = data.error || 'Login failed';
                     }
                 } catch (e) {
                     console.error('Login error:', e);
-                    alert('Could not connect to the server.');
+                    this.errorMessage = 'Could not connect to the server.';
                 }
-            },
-            init() {
-                lucide.createIcons();
             }
         }
     }
