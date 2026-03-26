@@ -19,12 +19,9 @@
 
     <div class="flex h-screen bg-black text-white overflow-hidden">
         <aside class="w-64 bg-zinc-950 text-zinc-400 flex flex-col border-r border-zinc-900">
-            <div class="p-6 flex items-center gap-3">
-                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-lg shadow-white/10">
-                    <i data-lucide="ticket" class="w-5 h-5 text-black"></i>
-                </div>
-                <span class="font-bold text-xl text-white tracking-tight">NextNQueue</span>
-            </div>
+            <div class="p-6 flex items-center justify-center gap-3 w-full">
+    <span class="font-bold text-2xl text-white tracking-tight">NextNQueue</span>
+</div>
 
             <nav class="flex-1 px-4 space-y-1">
                 <div class="pt-2 pb-2 px-3">
@@ -291,10 +288,25 @@
                             </div>
                         </div>
                     </section>
+                    
                     <section class="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-900">
                         <h4 class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-3">Description</h4>
                         <p class="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap" x-text="selectedTicket?.description"></p>
                     </section>
+
+                    <section class="bg-amber-500/5 rounded-2xl p-6 border border-amber-500/20 mt-8">
+                        <h4 class="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-3 flex items-center gap-2">
+                            Resolution Steps
+                        </h4>
+                        <textarea x-model="selectedTicket.admin_notes" rows="4" class="w-full px-4 py-3 bg-black/50 border border-amber-500/20 rounded-xl text-sm outline-none focus:bg-black focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/10 transition-all text-amber-50 resize-none placeholder:text-amber-500/30" placeholder="Document how this issue was resolved. Normal users cannot view this data."></textarea>
+                        
+                        <div class="flex justify-end mt-4">
+                            <button @click="saveAdminNotes()" class="px-5 py-2.5 bg-zinc-800 text-white text-sm font-semibold rounded-lg hover:bg-zinc-700 transition-all active:scale-95 w-32 flex justify-center">
+                                <span x-text="notesStatus || 'Save Notes'"></span>
+                            </button>
+                        </div>
+                    </section>
+
                 </div>
             </div>
         </div>
@@ -378,183 +390,232 @@
         </div>
     </div>
 
-    <script>
-        function adminApp() {
-            return {
-                currentUser: null,
-                sidebarView: 'dashboard',
-                selectedCategory: null,
-                activeTab: 'all',
-                searchQuery: '',
-                
-                // Ticket State
-                isCreateModalOpen: false,
-                selectedTicket: null,
-                tickets: [],
-                newTicketData: { title: '', creator: '', category: 'Hardware', priority: 'medium', description: '' },
-                
-                // Accounts State
-                users: [],
-                isUserModalOpen: false,
-                userData: { id: null, name: '', email: '', password: '', role: 'user' },
+   <script>
+    function adminApp() {
+        return {
+            currentUser: null,
+            sidebarView: 'dashboard',
+            selectedCategory: null,
+            activeTab: 'all',
+            searchQuery: '',
+            
+            // Ticket State
+            isCreateModalOpen: false,
+            selectedTicket: null,
+            tickets: [],
+            // Initializing with empty strings; creator will be set on add
+            newTicketData: { title: '', creator: '', category: 'Hardware', priority: 'medium', description: '' },
+            notesStatus: '', 
+            
+            // Accounts State
+            users: [],
+            isUserModalOpen: false,
+            userData: { id: null, name: '', email: '', password: '', role: 'user' },
 
-                // ---- TICKETS LOGIC ----
-                getStats() {
-                    const base = this.tickets.filter(t => this.sidebarView === 'dashboard' ? (t.status !== 'resolved' && t.status !== 'closed') : (t.status === 'resolved' || t.status === 'closed'));
-                    return {
-                        total: base.length,
-                        open: base.filter(t => t.status === 'open').length,
-                        inProgress: base.filter(t => t.status === 'in-progress').length,
-                        high: base.filter(t => t.priority === 'high').length,
-                        urgent: base.filter(t => t.priority === 'urgent').length
-                    };
-                },
-                filteredTickets() {
-                    return this.tickets.filter(t => {
-                        if (this.sidebarView === 'dashboard' && (t.status === 'resolved' || t.status === 'closed')) return false;
-                        if (this.sidebarView === 'all-tickets' && (t.status !== 'resolved' && t.status !== 'closed')) return false;
-                        if (this.selectedCategory && t.category !== this.selectedCategory) return false;
-                        if (this.activeTab !== 'all' && t.status !== this.activeTab) return false;
-                        if (this.searchQuery && this.sidebarView !== 'accounts') {
-                            const q = this.searchQuery.toLowerCase();
-                            return t.title.toLowerCase().includes(q) || t.id.toLowerCase().includes(q) || t.creator.toLowerCase().includes(q);
-                        }
-                        return true;
+            // ---- TICKETS LOGIC ----
+            getStats() {
+                const base = this.tickets.filter(t => this.sidebarView === 'dashboard' ? (t.status !== 'resolved' && t.status !== 'closed') : (t.status === 'resolved' || t.status === 'closed'));
+                return {
+                    total: base.length,
+                    open: base.filter(t => t.status === 'open').length,
+                    inProgress: base.filter(t => t.status === 'in-progress').length,
+                    high: base.filter(t => t.priority === 'high').length,
+                    urgent: base.filter(t => t.priority === 'urgent').length
+                };
+            },
+
+            filteredTickets() {
+                return this.tickets.filter(t => {
+                    if (this.sidebarView === 'dashboard' && (t.status === 'resolved' || t.status === 'closed')) return false;
+                    if (this.sidebarView === 'all-tickets' && (t.status !== 'resolved' && t.status !== 'closed')) return false;
+                    if (this.selectedCategory && t.category !== this.selectedCategory) return false;
+                    if (this.activeTab !== 'all' && t.status !== this.activeTab) return false;
+                    if (this.searchQuery && this.sidebarView !== 'accounts') {
+                        const q = this.searchQuery.toLowerCase();
+                        // Ensuring t.creator exists before calling toLowerCase()
+                        return (t.title?.toLowerCase().includes(q) || 
+                                t.id?.toString().toLowerCase().includes(q) || 
+                                t.creator?.toLowerCase().includes(q));
+                    }
+                    return true;
+                });
+            },
+
+            async fetchTickets() {
+                try {
+                    const response = await fetch('api.php');
+                    if (response.ok) {
+                        this.tickets = await response.json();
+                        this.$nextTick(() => lucide.createIcons());
+                    }
+                } catch (e) { console.error('Failed to fetch tickets:', e); }
+            },
+
+            async addTicket() {
+                // FORCE the creator to be the name string from the current session
+                const nameToStore = this.currentUser.name || "Unknown User";
+                
+                const newTicket = {
+                    ...this.newTicketData,
+                    creator: nameToStore, 
+                    status: 'open'
+                };
+
+                console.log("Sending Ticket Data:", newTicket);
+
+                try {
+                    const response = await fetch('api.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newTicket)
                     });
-                },
-                async fetchTickets() {
+                    if (response.ok) {
+                        await this.fetchTickets();
+                        this.isCreateModalOpen = false;
+                        this.newTicketData = { title: '', creator: '', category: 'Hardware', priority: 'medium', description: '' };
+                    }
+                } catch (e) { console.error('Failed to add ticket:', e); }
+            },
+
+            async updateStatus(status) {
+                if (this.selectedTicket) {
                     try {
-                        const response = await fetch('api.php');
-                        if (response.ok) {
-                            this.tickets = await response.json();
-                            this.$nextTick(() => lucide.createIcons());
-                        }
-                    } catch (e) { console.error('Failed to fetch tickets:', e); }
-                },
-                async addTicket() {
-                    const newTicket = {
-                        ...this.newTicketData,
-                        creator: this.currentUser.name,
-                        status: 'open'
-                    };
-                    try {
-                        const response = await fetch('api.php', {
-                            method: 'POST',
+                        const response = await fetch(`api.php?id=${this.selectedTicket.id}`, {
+                            method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(newTicket)
+                            body: JSON.stringify({ status })
                         });
                         if (response.ok) {
                             await this.fetchTickets();
-                            this.isCreateModalOpen = false;
-                            this.newTicketData = { title: '', creator: this.currentUser.name, category: 'Hardware', priority: 'medium', description: '' };
+                            this.selectedTicket = this.tickets.find(t => t.id === this.selectedTicket.id);
                         }
-                    } catch (e) { console.error('Failed to add ticket:', e); }
-                },
-                async updateStatus(status) {
-                    if (this.selectedTicket) {
-                        try {
-                            const response = await fetch(`api.php?id=${this.selectedTicket.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ status })
-                            });
-                            if (response.ok) {
-                                await this.fetchTickets();
-                                this.selectedTicket = this.tickets.find(t => t.id === this.selectedTicket.id);
-                            }
-                        } catch (e) { console.error('Failed to update status:', e); }
-                    }
-                },
+                    } catch (e) { console.error('Failed to update status:', e); }
+                }
+            },
 
-                // ---- ACCOUNTS LOGIC ----
-                filteredUsers() {
-                    return this.users.filter(u => {
-                        if (this.searchQuery && this.sidebarView === 'accounts') {
-                            const q = this.searchQuery.toLowerCase();
-                            return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
-                        }
-                        return true;
+            async saveAdminNotes() {
+                if (!this.selectedTicket) return;
+                
+                this.notesStatus = 'Saving...';
+                try {
+                    const response = await fetch(`api.php?id=${this.selectedTicket.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ admin_notes: this.selectedTicket.admin_notes })
                     });
-                },
-                async fetchUsers() {
-                    try {
-                        const response = await fetch('users.php');
-                        if (response.ok) {
-                            this.users = await response.json();
-                            this.$nextTick(() => lucide.createIcons());
-                        }
-                    } catch (e) { console.error('Failed to fetch users:', e); }
-                },
-                openUserModal(user = null) {
-                    if (user) {
-                        this.userData = { id: user.id, name: user.name, email: user.email, password: '', role: user.role };
-                    } else {
-                        this.userData = { id: null, name: '', email: '', password: '', role: 'user' };
-                    }
-                    this.isUserModalOpen = true;
-                },
-                async saveUser() {
-                    try {
-                        const url = this.userData.id ? `users.php?id=${this.userData.id}` : 'users.php';
-                        const method = this.userData.id ? 'PATCH' : 'POST';
-                        
-                        const response = await fetch(url, {
-                            method: method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.userData)
-                        });
 
+                    if (response.ok) {
+                        this.notesStatus = 'Saved! ✓';
+                        await this.fetchTickets(); 
+                        setTimeout(() => { this.notesStatus = ''; }, 2000);
+                    } else {
+                        this.notesStatus = 'Error';
+                        setTimeout(() => { this.notesStatus = ''; }, 2000);
+                    }
+                } catch (e) {
+                    console.error('Error saving notes:', e);
+                    this.notesStatus = 'Failed';
+                    setTimeout(() => { this.notesStatus = ''; }, 2000);
+                }
+            },
+
+            filteredUsers() {
+                return this.users.filter(u => {
+                    if (this.searchQuery && this.sidebarView === 'accounts') {
+                        const q = this.searchQuery.toLowerCase();
+                        return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
+                    }
+                    return true;
+                });
+            },
+
+            async fetchUsers() {
+                try {
+                    const response = await fetch('users.php');
+                    if (response.ok) {
+                        this.users = await response.json();
+                        this.$nextTick(() => lucide.createIcons());
+                    }
+                } catch (e) { console.error('Failed to fetch users:', e); }
+            },
+
+            openUserModal(user = null) {
+                if (user) {
+                    this.userData = { id: user.id, name: user.name, email: user.email, password: '', role: user.role };
+                } else {
+                    this.userData = { id: null, name: '', email: '', password: '', role: 'user' };
+                }
+                this.isUserModalOpen = true;
+            },
+
+            async saveUser() {
+                try {
+                    const url = this.userData.id ? `users.php?id=${this.userData.id}` : 'users.php';
+                    const method = this.userData.id ? 'PATCH' : 'POST';
+                    
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.userData)
+                    });
+
+                    if (response.ok) {
+                        await this.fetchUsers();
+                        this.isUserModalOpen = false;
+                    } else {
+                        alert("Failed to save user.");
+                    }
+                } catch (e) { console.error('Save user error:', e); }
+            },
+
+            async deleteUser(id) {
+                if(confirm("Are you sure you want to delete this user? This cannot be undone.")) {
+                    try {
+                        const response = await fetch(`users.php?id=${id}`, { method: 'DELETE' });
                         if (response.ok) {
                             await this.fetchUsers();
-                            this.isUserModalOpen = false;
-                        } else {
-                            alert("Failed to save user.");
                         }
-                    } catch (e) { console.error('Save user error:', e); }
-                },
-                async deleteUser(id) {
-                    if(confirm("Are you sure you want to delete this user? This cannot be undone.")) {
-                        try {
-                            const response = await fetch(`users.php?id=${id}`, { method: 'DELETE' });
-                            if (response.ok) {
-                                await this.fetchUsers();
-                            }
-                        } catch (e) { console.error('Delete user error:', e); }
-                    }
-                },
-
-                // ---- APP INIT ----
-                logout() {
-                    localStorage.removeItem('zentick_user');
-                    window.location.href = 'login.html';
-                },
-                init() {
-                    const localData = localStorage.getItem('zentick_user');
-                    if (!localData) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    this.currentUser = JSON.parse(localData);
-                    if (this.currentUser.role !== 'admin') {
-                        window.location.href = 'user.html';
-                        return;
-                    }
-                    
-                    // Fetch initial data
-                    this.fetchTickets();
-                    this.fetchUsers();
-                    
-                    // Setup UI Watchers
-                    lucide.createIcons();
-                    this.$watch('sidebarView', () => {
-                        this.searchQuery = ''; // Clear search when switching tabs
-                        this.$nextTick(() => lucide.createIcons());
-                    });
-                    this.$watch('selectedTicket', () => this.$nextTick(() => lucide.createIcons()));
-                    this.$watch('users', () => this.$nextTick(() => lucide.createIcons()));
+                    } catch (e) { console.error('Delete user error:', e); }
                 }
+            },
+
+            logout() {
+                localStorage.removeItem('zentick_user');
+                window.location.href = 'login.html';
+            },
+
+            init() {
+                const localData = localStorage.getItem('zentick_user');
+                if (!localData) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                this.currentUser = JSON.parse(localData);
+
+                console.log("Logged in as:", this.currentUser);
+
+                if (this.currentUser.role !== 'admin') {
+                    window.location.href = 'user.html';
+                    return;
+                }
+                
+                this.fetchTickets();
+                this.fetchUsers();
+                
+                lucide.createIcons();
+                this.$watch('sidebarView', () => {
+                    this.searchQuery = ''; 
+                    this.$nextTick(() => lucide.createIcons());
+                });
+                this.$watch('selectedTicket', () => {
+                    this.notesStatus = '';
+                    this.$nextTick(() => lucide.createIcons());
+                });
+                this.$watch('users', () => this.$nextTick(() => lucide.createIcons()));
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>
