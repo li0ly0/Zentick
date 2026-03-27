@@ -40,8 +40,3 @@ Currently, this repository contains the **frontend architecture**. To run this l
 2. Serve the directory using a local web server (e.g., PHP's built-in server):
 
         php -S localhost:8000
-
-3. **Backend Implementation:** Create the following PHP files to handle the API requests:
-   * `auth.php` - Handles `POST` requests for login validation. Returns a JSON user object.
-   * `api.php` - Handles `GET`, `POST`, and `PATCH` requests for fetching, creating, and updating tickets.
-   * `users.php` - Handles `GET`, `POST`, `PATCH`, and `DELETE` requests for user management.
