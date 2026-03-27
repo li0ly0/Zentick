@@ -4,6 +4,8 @@ NextNQueue is a streamlined, monochromatic IT Helpdesk and Ticketing System engi
 
 **Note on Customization:** Please be advised that this repository serves as a foundational template. The user interface relies entirely on utility classes, allowing for extensive customization and modification to align with specific organizational branding and structural requirements.
 
+---
+
 ## Features
 
 ### Administrative Dashboard
@@ -17,6 +19,8 @@ NextNQueue is a streamlined, monochromatic IT Helpdesk and Ticketing System engi
 * **Intuitive Submission Interface:** A streamlined form for submitting new support requests, featuring visual category selection to ensure accurate routing.
 * **Request Tracking:** Grants users visibility into their historical and active support tickets.
 
+---
+
 ## Technology Stack
 
 * HTML5
@@ -25,6 +29,8 @@ NextNQueue is a streamlined, monochromatic IT Helpdesk and Ticketing System engi
 * [Lucide Icons](https://lucide.dev/)
 * PHP
 * MySQL/MariaDB
+
+---
 
 ## Database Schema
 
@@ -80,6 +86,7 @@ ALTER TABLE `users`
 
 COMMIT;
 ```
+---
 
 ## Installation & Setup
 
