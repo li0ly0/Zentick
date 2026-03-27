@@ -30,7 +30,7 @@ NextNQueue is a streamlined, monochromatic IT Helpdesk and Ticketing System engi
 
 
 
-To initialize the backend, execute the following SQL schema to establish the necessary tables and indexes. (Data insertion statements have been excluded for deployment readiness).
+To initialize the backend, execute the following SQL schema to establish the necessary tables and indexes.
 
 ```sql
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
